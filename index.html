@@ -352,8 +352,8 @@ document.getElementById("translateButton").addEventListener("click", function() 
     .then(response => response.json())
     .then(data => {
         if (data.message) {
-            document.getElementById("downloadOBS").href = `/Documents/${arquivo}_obs.25o`;
-            document.getElementById("downloadNAV").href = `/Documents/${arquivo}_nav.nav`;
+            document.getElementById("downloadOBS").href = `/files/${arquivo}_obs.25o`;
+            document.getElementById("downloadNAV").href = `/files/${arquivo}_nav.nav`;
             document.getElementById("downloadOBS").style.display = 'inline';
             document.getElementById("downloadNAV").style.display = 'inline';
         } else if (data.error) {

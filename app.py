@@ -112,7 +112,7 @@ from flask import send_from_directory
 
 @app.route('/files/<path:filename>')
 def download_file(filename):
-    documents_folder = '/home/zero/pythonserver/files/'
+    documents_folder = '/home/zero/pythonserver/files'
     print("Requested file:", filename)
     return send_from_directory(documents_folder, filename, as_attachment=True)
 
