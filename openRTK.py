@@ -13,13 +13,13 @@ args = parser.parse_args()
 
 rtklib_path = '/home/zero/RTKLIB/app/consapp/convbin/gcc/convbin'
 
-input_file = '/home/zero/Documents/' + args.input + '.rtcm'
+input_file = '/home/zero/pythonserver/files/' + args.input + '.rtcm'
 
-output_file = '/home/zero/Documents/' + args.output + '.25o'
+output_file = '/home/zero/pythonserver/files/' + args.output + '.25o'
 
-nav_file = '/home/zero/Documents/' + args.nav + '.nav'
-gnav_file = '/home/zero/Documents/' + args.gnav + '.25g'
-qnav_file = '/home/zero/Documents/' + args.qnav + '.25q'
+nav_file = '/home/zero/pythonserver/files/' + args.nav + '.nav'
+gnav_file = '/home/zero/pythonserver/files/' + args.gnav + '.25g'
+qnav_file = '/home/zero/pythonserver/files/' + args.qnav + '.25q'
 
 command = [
     rtklib_path,

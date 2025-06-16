@@ -43,7 +43,7 @@ def run_ntrip():
             "--password=" + password,
             "--maxtime=" + ntimer,
             host, port, mountpoint,
-            "-f", os.path.join("/home/zero/Documents/", arquivo + ".rtcm")
+            "-f", os.path.join("/home/zero/pythonserver/files/", arquivo + ".rtcm")
         ]
     elif enviapos == 'S':
         command = [
@@ -55,7 +55,7 @@ def run_ntrip():
             "--height=" + altitude,
             "--maxtime=" + ntimer,
             host, port, mountpoint,
-            "-f", os.path.join("/home/zero/Documents/", arquivo + ".rtcm")
+            "-f", os.path.join("/home/zero/pythonserver/files/", arquivo + ".rtcm")
         ]
     
     try:
@@ -110,9 +110,9 @@ def translate_rinex():
 
 from flask import send_from_directory
 
-@app.route('/Documents/<path:filename>')
+@app.route('/files/<path:filename>')
 def download_file(filename):
-    documents_folder = '/home/zero/Documents/'
+    documents_folder = '/home/zero/pythonserver/files/'
     print("Requested file:", filename)
     return send_from_directory(documents_folder, filename, as_attachment=True)
 
@@ -125,7 +125,7 @@ def delete_file():
     if not filename:
         return jsonify({"error": "File name is required!"}), 400
 
-    file_path = os.path.join('/home/zero/Documents/' + filename)
+    file_path = os.path.join('/home/zero/pythonserver/files/' + filename)
 
     try:
         if os.path.exists(file_path + ".rtcm"):
