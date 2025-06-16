@@ -11,7 +11,7 @@ parser.add_argument('--gnav', required=True, help='Name of the GNAV file (withou
 parser.add_argument('--qnav', required=True, help='Name of the QNAV file (without extension)')
 args = parser.parse_args()
 
-rtklib_path = '/home/zero/RTKLIB/app/consapp/convbin/gcc/convbin.o'
+rtklib_path = '/home/zero/RTKLIB/app/consapp/convbin/gcc/convbin'
 
 input_file = '/home/zero/pythonserver/files/' + args.input + '.rtcm'
 
