@@ -1,14 +1,15 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
 import signal
 import subprocess
 import os
 import platform
+import uuid  # To generate unique session IDs for each user
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)  # Secret key for session encryption
 
-# Global variable to track the process status
-process = None
-process_status = {"running": False, "message": "No process running."}
+# A dictionary to store process status by user_id
+user_processes = {}
 
 @app.after_request
 def after_request(response):
@@ -21,7 +22,13 @@ def index():
 
 @app.route('/run_ntrip', methods=['POST'])
 def run_ntrip():
-    global process, process_status
+    global user_processes
+
+    # Generate or retrieve user session ID
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())  # Unique user ID for the session
+    
+    user_id = session['user_id']
 
     # Get form data
     arquivo = request.form.get('arquivo', '').strip()
@@ -68,10 +75,9 @@ def run_ntrip():
             process = subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else:
             process = subprocess.Popen(command, preexec_fn=os.setsid)
-        
-        # Update process status
-        process_status["running"] = True
-        process_status["message"] = "NTRIP Client is running..."
+
+        # Update the status for this user
+        user_processes[user_id] = {"running": True, "message": "NTRIP Client is running..."}
 
         return jsonify({"message": "NTRIP Client Iniciado!"}), 200
 
@@ -80,23 +86,28 @@ def run_ntrip():
 
 @app.route('/check_status', methods=['GET'])
 def check_status():
-    global process, process_status
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "No active session found."}), 400
 
-    # Check if the process is running
+    # Get the process status for the current user
+    process_status = user_processes.get(user_id, {"running": False, "message": "No process running."})
+
+    # Check if the process is still running
     if process_status["running"]:
         if process.poll() is None:  # Process is still running
             process_status["message"] = "NTRIP Client is still running..."
         else:  # Process has stopped
-            process_status["running"] = False
-            process_status["message"] = "NTRIP Client has stopped."
-    else:
-        process_status["message"] = "No process is currently running."
-
+            user_processes[user_id]["running"] = False
+            user_processes[user_id]["message"] = "NTRIP Client has stopped."
+    
     return jsonify(process_status)
 
 @app.route('/translate_rinex', methods=['POST'])
 def translate_rinex():
-    global process, process_status
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "No active session found."}), 400
 
     arquivo = request.form.get('arquivo')
 
@@ -116,9 +127,8 @@ def translate_rinex():
         else:
             process = subprocess.Popen(command, preexec_fn=os.setsid)
 
-        # Update process status
-        process_status["running"] = True
-        process_status["message"] = "Translation is running..."
+        # Update the status for this user
+        user_processes[user_id] = {"running": True, "message": "Translation is running..."}
 
         return jsonify({"message": "Tradução feita"}), 200
 
@@ -132,6 +142,10 @@ def download_file(filename):
 
 @app.route('/delete_file', methods=['POST'])
 def delete_file():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "No active session found."}), 400
+
     data = request.get_json()
     filename = data.get('file').strip()
 
