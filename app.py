@@ -91,17 +91,20 @@ def check_status():
         return jsonify({"error": "No active session found."}), 400
 
     # Get the process status for the current user
-    global process
     process_status = user_processes.get(user_id, {"running": False, "message": "No process running."})
 
-    # Check if the process is still running
+    # Check if the process is still running (only if it's marked as running)
     if process_status["running"]:
-        if process.poll() is None:  # Process is still running
-            process_status["message"] = "NTRIP Client is still running..."
-        else:  # Process has stopped
+        try:
+            if process_status["process"].poll() is None:  # Process is still running
+                process_status["message"] = "NTRIP Client is still running..."
+            else:  # Process has stopped
+                user_processes[user_id]["running"] = False
+                user_processes[user_id]["message"] = "NTRIP Client has stopped."
+        except Exception as e:
             user_processes[user_id]["running"] = False
-            user_processes[user_id]["message"] = "NTRIP Client has stopped."
-    
+            user_processes[user_id]["message"] = f"Error checking process: {str(e)}"
+
     return jsonify(process_status)
 
 @app.route('/translate_rinex', methods=['POST'])
