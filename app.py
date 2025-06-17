@@ -91,6 +91,7 @@ def check_status():
         return jsonify({"error": "No active session found."}), 400
 
     # Get the process status for the current user
+    global process
     process_status = user_processes.get(user_id, {"running": False, "message": "No process running."})
 
     # Check if the process is still running
