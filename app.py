@@ -3,10 +3,12 @@ import signal
 import subprocess
 import os
 import platform
+import psutil  # Add this import
 
 app = Flask(__name__)
 
 process = None
+is_running = False  # Global status flag
 
 @app.after_request
 def after_request(response):
@@ -19,8 +21,8 @@ def index():
 
 @app.route('/run_ntrip', methods=['POST'])
 def run_ntrip():
-    global process
-
+    global process, is_running
+    
     arquivo = request.form.get('arquivo', '').strip()
     user = request.form.get('user', '').strip()
     password = request.form.get('password', '').strip()
@@ -69,8 +71,11 @@ def run_ntrip():
                 command,
                 preexec_fn=os.setsid
             )
-
-        return jsonify({"message": "NTRIP Client Iniciado!"}), 200
+        is_running = True
+        return jsonify({
+            "message": "NTRIP Client Iniciado!",
+            "status": "running"
+        }), 200
 
     except Exception as e:
         return jsonify({"error": f"Error starting NTRIP Client: {str(e)}"}), 500

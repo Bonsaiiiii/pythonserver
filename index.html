@@ -69,7 +69,6 @@
             background-color: #fff;
         }
 
-        /* Style for the three upper buttons */
         button {
             margin-top: 20px;
             padding: 12px 24px;
@@ -82,7 +81,7 @@
             transition: background-color 0.3s ease;
             display: block;
             width: 100%;
-            max-width: 250px; /* Ensures buttons don't stretch too much */
+            max-width: 250px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -91,31 +90,32 @@
             background-color: var(--secondary-color);
         }
 
-        /* Countdown buttons: Keep them smaller and more flexible */
         #selectCountDown {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 10px; 
             margin-top: 20px;
         }
 
         #selectCountDown button {
             background-color: #6c757d;
             color: white;
-            padding: 10px 15px;
+            padding: 12px 5px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1em;
-            width: auto;
-            max-width: 120px;
+            font-size: 0.9em;
+            flex: 1;
+            text-align: center;
+            max-width: none;
+            margin: 0;
+            width: auto; 
         }
 
         #selectCountDown button:hover {
             background-color: #5a6268;
         }
 
-        /* Timer Styling: Making it prominent */
         #timer {
             margin-top: 20px;
             font-size: 2em;
@@ -126,19 +126,18 @@
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            display: none; /* Hide initially */
+            display: none;
         }
 
         #controls {
-            text-align: center;  /* Centers all buttons inside the #controls container */
+            text-align: center;
         }
 
-        /* Make sure the "Traduzir para Rinex" button behaves like others */
         #translateButton {
-            display: block; /* Ensures it behaves like the others once visible */
-            margin: 10px auto; /* This will horizontally center it */
+            display: block;
+            margin: 10px auto; 
             width: 100%;
-            max-width: 250px; /* Same as other buttons */
+            max-width: 250px;
             padding: 12px 24px;
             background-color: var(--primary-color);
             color: #fff;
@@ -160,22 +159,22 @@
         <h2>Insira as credenciais NTRIP Client</h2>
         <form id="ntripForm">
             <label for="arquivo">Nome de arquivo:</label>
-            <input type="text" id="arquivo" name="arquivo" value="teste" required>
+            <input type="text" id="arquivo" name="arquivo" required>
 
             <label for="user">Usuário NTRIP:</label>
-            <input type="text" id="user" name="user" value="agrimensura" required>
+            <input type="text" id="user" name="user" required>
 
             <label for="password">Senha:</label>
-            <input type="text" id="password" name="password" value="ifscntrip" required>
+            <input type="text" id="password" name="password" required>
 
             <label for="host">Host NTRIP:</label>
-            <input type="text" id="host" name="host" value="fln95.ifsc.edu.br" required>
+            <input type="text" id="host" name="host" required>
 
             <label for="port">Porta:</label>
             <input type="text" id="port" name="port" maxlength="5" value="2101" required>
 
             <label for="mountpoint">MountPoint:</label>
-            <input type="text" id="mountpoint" name="mountpoint" value="IFSC0" required>
+            <input type="text" id="mountpoint" name="mountpoint" required>
 
             <label for="saidaonoff" class="form-label">Enviar posição?</label>
               <select class="form-select" id="enviapos" name="enviapos">
@@ -184,13 +183,13 @@
             </select>
 
             <label for="latitude">Latitude:</label>
-            <input type="text" id="latitude" name="latitude">
+            <input type="text" id="latitude" name="latitude" placeholder="00.00000">
 
             <label for="longitude">Longitude:</label>
-            <input type="text" id="longitude" name="longitude">
+            <input type="text" id="longitude" name="longitude" placeholder="00.00000">
 
             <label for="altitude">Altitude (indisponível em alguns dispositivos):</label>
-            <input type="text" id="altitude" name="altitude">
+            <input type="text" id="altitude" name="altitude" placeholder="00.00000">
 
             <button type="button" onclick="getLocation()">Buscar localização</button>
 
@@ -233,10 +232,7 @@
 
             <button id="validate" type="submit">Validar</button>
 
-            <button type="button" id="delete">deletar arquivo</button>
-
             <div id="selectCountDown" style="display: none;">
-                <button type="submit" data-minutes="1">botao teste</button>
                 <button type="submit" data-minutes="10">10 Minutos</button>
                 <button type="submit" data-minutes="30">30 Minutos</button>
                 <button type="submit" data-minutes="60">1 Hora</button>
@@ -253,6 +249,67 @@
         </div>
 
     <p id="timer"></p>
+
+    <div id="processStatus" style="margin-top: 20px; padding: 10px; border-radius: 8px; 
+        text-align: center; font-weight: bold; display: none;">
+    </div>
+
+    <script>
+    // Add these global variables
+    let statusInterval;
+    let statusDisplay = document.getElementById("processStatus");
+
+    // Add this function to check process status
+    function checkProcessStatus() {
+        fetch('/process_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'running') {
+                    statusDisplay.textContent = "STATUS: Processo em execução";
+                    statusDisplay.style.backgroundColor = "#d4edda";
+                    statusDisplay.style.color = "#155724";
+                    statusDisplay.style.display = 'block';
+                } else {
+                    statusDisplay.textContent = "STATUS: Processo parado";
+                    statusDisplay.style.backgroundColor = "#f8d7da";
+                    statusDisplay.style.color = "#721c24";
+                    statusDisplay.style.display = 'block';
+                    clearInterval(statusInterval);
+                }
+            });
+    }
+
+    // Modify form submission handler
+    document.getElementById("ntripForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        
+        // [Existing code...]
+        
+        fetch('/run_ntrip', {
+            // [Existing code...]
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                // [Existing code...]
+                
+                // Start status polling
+                statusInterval = setInterval(checkProcessStatus, 2000);
+                checkProcessStatus();  // Immediate check
+                
+                // [Existing timer button code...]
+            }
+            // [Existing error handling...]
+        })
+        // [Existing error handling...]
+    });
+
+    // Add to beforeunload handler
+    window.addEventListener('beforeunload', function (event) {
+        // [Existing code...]
+        clearInterval(statusInterval);  // Clean up interval
+    });
+    </script>
     
     <script>
     let arquivo = "";
@@ -298,7 +355,7 @@
             document.getElementById("statusMessage").textContent = data.message;
             document.getElementById("statusMessage").style.color = "green";
             document.getElementById("validate").style.display = 'none';
-            document.getElementById("selectCountDown").style.display = 'inline';
+            document.getElementById("selectCountDown").style.display = 'flex';
             let countDownInterval;
 
             document.querySelectorAll('#selectCountDown button').forEach(button => {
