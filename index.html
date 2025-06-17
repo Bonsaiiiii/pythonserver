@@ -249,67 +249,6 @@
         </div>
 
     <p id="timer"></p>
-
-    <div id="processStatus" style="margin-top: 20px; padding: 10px; border-radius: 8px; 
-        text-align: center; font-weight: bold; display: none;">
-    </div>
-
-    <script>
-    // Add these global variables
-    let statusInterval;
-    let statusDisplay = document.getElementById("processStatus");
-
-    // Add this function to check process status
-    function checkProcessStatus() {
-        fetch('/process_status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'running') {
-                    statusDisplay.textContent = "STATUS: Processo em execução";
-                    statusDisplay.style.backgroundColor = "#d4edda";
-                    statusDisplay.style.color = "#155724";
-                    statusDisplay.style.display = 'block';
-                } else {
-                    statusDisplay.textContent = "STATUS: Processo parado";
-                    statusDisplay.style.backgroundColor = "#f8d7da";
-                    statusDisplay.style.color = "#721c24";
-                    statusDisplay.style.display = 'block';
-                    clearInterval(statusInterval);
-                }
-            });
-    }
-
-    // Modify form submission handler
-    document.getElementById("ntripForm").addEventListener("submit", function(event) {
-        event.preventDefault();
-        
-        // [Existing code...]
-        
-        fetch('/run_ntrip', {
-            // [Existing code...]
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                // [Existing code...]
-                
-                // Start status polling
-                statusInterval = setInterval(checkProcessStatus, 2000);
-                checkProcessStatus();  // Immediate check
-                
-                // [Existing timer button code...]
-            }
-            // [Existing error handling...]
-        })
-        // [Existing error handling...]
-    });
-
-    // Add to beforeunload handler
-    window.addEventListener('beforeunload', function (event) {
-        // [Existing code...]
-        clearInterval(statusInterval);  // Clean up interval
-    });
-    </script>
     
     <script>
     let arquivo = "";
