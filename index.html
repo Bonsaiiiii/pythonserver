@@ -250,6 +250,63 @@
         </div>
 
     <p id="timer"></p>
+
+    <!-- Status indicator -->
+<div id="statusIndicator" style="margin: 20px;">
+    Status: <span id="statusText">Checking...</span>
+    <div style="display:inline-block; width:20px; height:20px; border-radius:50%; background:gray; margin-left:10px;" id="statusLight"></div>
+</div>
+
+<script>
+// Generate or retrieve session token
+let token = sessionStorage.getItem('ntripToken');
+if (!token) {
+    token = crypto.randomUUID();
+    sessionStorage.setItem('ntripToken', token);
+}
+
+// Function to check status
+async function checkStatus() {
+    try {
+        // Update token in session
+        await fetch('/get_token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({token: token})
+        });
+        
+        const response = await fetch('/ntrip_status');
+        const data = await response.json();
+        
+        // Update UI
+        document.getElementById('statusText').textContent = 
+            data.status === 'running' ? 'RUNNING' : 'STOPPED';
+        
+        document.getElementById('statusLight').style.background = 
+            data.status === 'running' ? 'green' : 'red';
+            
+    } catch (error) {
+        console.error('Status check failed:', error);
+    }
+}
+
+// Add token to all forms
+document.querySelectorAll('form').forEach(form => {
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'token';
+    tokenInput.value = token;
+    form.appendChild(tokenInput);
+});
+
+// Initial status check
+checkStatus();
+
+// Check every 5 seconds
+setInterval(checkStatus, 5000);
+</script>
     
     <script>
     let arquivo = "";
