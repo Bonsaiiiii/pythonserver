@@ -1,15 +1,11 @@
-from flask import Flask, request, jsonify, send_from_directory, session
-import signal
+from flask import Flask, request, jsonify
 import subprocess
 import os
 import platform
-import uuid  # To generate unique session IDs for each user
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Secret key for session encryption
 
-# A dictionary to store process status by user_id
-user_processes = {}
+process = None
 
 @app.after_request
 def after_request(response):
@@ -22,15 +18,8 @@ def index():
 
 @app.route('/run_ntrip', methods=['POST'])
 def run_ntrip():
-    global user_processes
+    global process
 
-    # Generate or retrieve user session ID
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())  # Unique user ID for the session
-    
-    user_id = session['user_id']
-
-    # Get form data
     arquivo = request.form.get('arquivo', '').strip()
     user = request.form.get('user', '').strip()
     password = request.form.get('password', '').strip()
@@ -46,7 +35,6 @@ def run_ntrip():
     if not user or not password:
         return jsonify({"error": "User and Password are required!"}), 400
 
-    # Prepare the command to run the NtripClient.py
     if enviapos == 'N':
         command = [
             "python3", "NtripClient.py",
@@ -70,48 +58,25 @@ def run_ntrip():
         ]
     
     try:
-        # Start the process
         if platform.system() == "Windows":
-            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            process = subprocess.Popen(
+                command,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+            )
         else:
-            process = subprocess.Popen(command, preexec_fn=os.setsid)
+            process = subprocess.Popen(
+                command,
+                preexec_fn=os.setsid
+            )
 
-        # Update the status for this user
-        user_processes[user_id] = {"running": True, "message": "NTRIP Client is running..."}
-
-        return jsonify({"message": "NTRIP Client Iniciado!"}), 200
+        return jsonify({"message": "NTRIP Client started successfully!"}), 200
 
     except Exception as e:
         return jsonify({"error": f"Error starting NTRIP Client: {str(e)}"}), 500
-
-@app.route('/check_status', methods=['GET'])
-def check_status():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"error": "No active session found."}), 400
-
-    # Get the process status for the current user
-    process_status = user_processes.get(user_id, {"running": False, "message": "No process running."})
-
-    # Check if the process is still running (only if it's marked as running)
-    if process_status["running"]:
-        try:
-            if process_status["process"].poll() is None:  # Process is still running
-                process_status["message"] = "NTRIP Client is still running..."
-            else:  # Process has stopped
-                user_processes[user_id]["running"] = False
-                user_processes[user_id]["message"] = "NTRIP Client has stopped."
-        except Exception as e:
-            user_processes[user_id]["running"] = False
-            user_processes[user_id]["message"] = f"Error checking process: {str(e)}"
-
-    return jsonify(process_status)
-
+        
 @app.route('/translate_rinex', methods=['POST'])
 def translate_rinex():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"error": "No active session found."}), 400
+    global process
 
     arquivo = request.form.get('arquivo')
 
@@ -125,33 +90,36 @@ def translate_rinex():
     ]
 
     try:
-        # Start the process
         if platform.system() == "Windows":
-            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            process = subprocess.Popen(
+                command,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+            )
         else:
-            process = subprocess.Popen(command, preexec_fn=os.setsid)
-
-        # Update the status for this user
-        user_processes[user_id] = {"running": True, "message": "Translation is running..."}
+            process = subprocess.Popen(
+                command,
+                preexec_fn=os.setsid
+            )
 
         return jsonify({"message": "Tradução feita"}), 200
 
     except Exception as e:
-        return jsonify({"error": f"Error starting translation: {str(e)}"}), 500
+        return jsonify({"error": f"Error starting NTRIP Client: {str(e)}"}), 500
+    
+
+from flask import send_from_directory
 
 @app.route('/files/<path:filename>')
 def download_file(filename):
-    documents_folder = '/home/zero/pythonserver/files'
+    documents_folder = '/home/zero/pythonserver/files/'
+    print("Requested file:", filename)
     return send_from_directory(documents_folder, filename, as_attachment=True)
 
 @app.route('/delete_file', methods=['POST'])
 def delete_file():
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({"error": "No active session found."}), 400
-
     data = request.get_json()
     filename = data.get('file').strip()
+    print(filename)
 
     if not filename:
         return jsonify({"error": "File name is required!"}), 400
@@ -160,14 +128,19 @@ def delete_file():
 
     try:
         if os.path.exists(file_path + ".rtcm"):
+            print("rtcm apagado")
             os.remove(file_path + ".rtcm")
             if os.path.exists(file_path + "_nav.nav"):
+                print("nav apagado")
                 os.remove(file_path + "_nav.nav")
             if os.path.exists(file_path + "_obs.25o"):
+                print("obs apagado")
                 os.remove(file_path + "_obs.25o")
             if os.path.exists(file_path + "_gnav.25g"):
+                print("gnav apagado")
                 os.remove(file_path + "_gnav.25g")
             if os.path.exists(file_path + "_qnav.25q"):
+                print("qnav apagado")
                 os.remove(file_path + "_qnav.25q")
             return jsonify({"message": f"File {filename} deleted successfully!"}), 200
         else:
@@ -176,5 +149,7 @@ def delete_file():
     except Exception as e:
         return jsonify({"error": f"Error deleting file: {str(e)}"}), 500
 
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+
