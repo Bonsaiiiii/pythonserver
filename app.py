@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import flask, request, jsonify
 import subprocess
 import os
 import platform
@@ -151,6 +151,6 @@ def delete_file():
 
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run()
 #    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
 
