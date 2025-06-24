@@ -1,3 +1,3 @@
-rinex-translator.duckdns.org {
-    reverse_proxy 127.0.0.1:8000
+http://rinex-translator.duckdns.org {
+    reverse_proxy http://127.0.0.1:8000
 }
